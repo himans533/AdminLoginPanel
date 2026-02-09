@@ -207,14 +207,14 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usertypes (
                 SERIAL PRIMARY KEY,
-                user_role TEXT NOT NULL UNIQUE,
-                description TEXT,
+                user_role VARCHAR NOT NULL UNIQUE,
+                description VARCHAR,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         # Check if description column exists (for old DBS)
         try: 
-            cursor.execute("ALTER TABLE usertypes ADD COLUMN description TEXT")
+            cursor.execute("ALTER TABLE usertypes ADD COLUMN description VARCHAR")
         except: pass
 
         # Usertype Permissions (dependent on usertypes)
@@ -222,8 +222,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS usertype_permissions (
                 SERIAL PRIMARY KEY,
                 usertype_id INTEGER NOT NULL,
-                module TEXT NOT NULL,
-                action TEXT NOT NULL,
+                module VARCHAR NOT NULL,
+                action VARCHAR NOT NULL,
                 granted BOOLEAN DEFAULT 0,
                 FOREIGN KEY (usertype_id) REFERENCES usertypes(id) ON DELETE CASCADE,
                 UNIQUE(usertype_id, module, action)
@@ -234,16 +234,16 @@ def init_db():
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
-                username TEXT NOT NULL UNIQUE,
-                email TEXT NOT NULL UNIQUE,
-                password TEXT NOT NULL,
+                username VARCHAR NOT NULL UNIQUE,
+                email VARCHAR NOT NULL UNIQUE,
+                password VARCHAR NOT NULL,
                 user_type_id INTEGER NOT NULL,
                 granted BOOLEAN DEFAULT 0,
-                status TEXT DEFAULT 'Active',
-                phone TEXT,
-                department TEXT,
-                bio TEXT,
-                avatar_url TEXT,
+                status VARCHAR DEFAULT 'Active',
+                phone VARCHAR,
+                department VARCHAR,
+                bio VARCHAR,
+                avatar_url VARCHAR,
                 is_system INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_type_id) REFERENCES usertypes(id)
@@ -259,8 +259,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS user_permissions (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL,
-                module TEXT NOT NULL,
-                action TEXT NOT NULL,
+                module VARCHAR NOT NULL,
+                action VARCHAR NOT NULL,
                 granted BOOLEAN DEFAULT 0,
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 UNIQUE(user_id, module, action)
@@ -270,9 +270,9 @@ def init_db():
         # Projects (dependent on users)
         cursor.execute('''CREATE TABLE IF NOT EXISTS projects (
             id SERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT DEFAULT 'In Progress',
+            title VARCHAR NOT NULL,
+            description VARCHAR,
+            status VARCHAR DEFAULT 'In Progress',
             progress INTEGER DEFAULT 0,
             deadline DATE,
             reporting_time TIME DEFAULT '09:00',
@@ -286,10 +286,10 @@ def init_db():
         # Tasks (dependent on projects, users)
         cursor.execute('''CREATE TABLE IF NOT EXISTS tasks (
             id SERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT DEFAULT 'Pending',
-            priority TEXT DEFAULT 'Medium',
+            title VARCHAR NOT NULL,
+            description VARCHAR,
+            status VARCHAR DEFAULT 'Pending',
+            priority VARCHAR DEFAULT 'Medium',
             deadline DATE,
             project_id INTEGER NOT NULL,
             created_by_id INTEGER NOT NULL,
@@ -297,7 +297,7 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             completed_at TIMESTAMP,
-            approval_status TEXT DEFAULT 'pending',
+            approval_status VARCHAR DEFAULT 'pending',
             weightage INTEGER DEFAULT 1,
             FOREIGN KEY (project_id) REFERENCES projects(id),
             FOREIGN KEY (created_by_id) REFERENCES users(id),
@@ -307,7 +307,7 @@ def init_db():
         # Comments (dependent on users, projects, tasks)
         cursor.execute('''CREATE TABLE IF NOT EXISTS comments (
             id SERIAL PRIMARY KEY,
-            content TEXT NOT NULL,
+            content VARCHAR NOT NULL,
             author_id INTEGER NOT NULL,
             project_id INTEGER,
             task_id INTEGER,
@@ -320,7 +320,7 @@ def init_db():
         # Documents
         cursor.execute('''CREATE TABLE IF NOT EXISTS documents (
             id SERIAL PRIMARY KEY,
-            filename TEXT NOT NULL,
+            filename VARCHAR NOT NULL,
             original_filename TEXT NOT NULL,
             file_size INTEGER,
             uploaded_by_id INTEGER NOT NULL,
@@ -335,10 +335,10 @@ def init_db():
         # Milestones
         cursor.execute('''CREATE TABLE IF NOT EXISTS milestones (
             id SERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
+            title VARCHAR NOT NULL,
+            description VARCHAR,
             due_date DATE,
-            status TEXT DEFAULT 'Pending',
+            status VARCHAR DEFAULT 'Pending',
             project_id INTEGER NOT NULL,
             weightage INTEGER DEFAULT 1,
             created_by_id INTEGER NOT NULL,
@@ -380,8 +380,8 @@ def init_db():
         cursor.execute('''CREATE TABLE IF NOT EXISTS activities (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
-            activity_type TEXT NOT NULL,
-            description TEXT NOT NULL,
+            activity_type VARCHAR NOT NULL,
+            description VARCHAR NOT NULL,
             project_id INTEGER,
             task_id INTEGER,
             milestone_id INTEGER,
@@ -396,7 +396,7 @@ def init_db():
         cursor.execute('''CREATE TABLE IF NOT EXISTS user_skills (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
-            skill_name TEXT NOT NULL,
+            skill_name VARCHAR NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             UNIQUE(user_id, skill_name)
@@ -409,13 +409,13 @@ def init_db():
             task_id INTEGER NOT NULL,
             project_id INTEGER NOT NULL,
             report_date DATE NOT NULL,
-            work_description TEXT,
+            work_description VARCHAR,
             time_spent REAL DEFAULT 0,
-            status TEXT DEFAULT 'In Progress',
-            blocker TEXT,
-            approval_status TEXT DEFAULT 'pending',
+            status VARCHAR DEFAULT 'In Progress',
+            blocker VARCHAR,
+            approval_status VARCHAR DEFAULT 'pending',
             reviewed_by INTEGER,
-            review_comment TEXT,
+            review_comment VARCHAR,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
@@ -430,7 +430,7 @@ def init_db():
             id SERIAL PRIMARY KEY,
             report_id INTEGER NOT NULL,
             commenter_id INTEGER NOT NULL,
-            comment TEXT NOT NULL,
+            comment VARCHAR NOT NULL,
             internal BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (report_id) REFERENCES daily_task_reports(id),
@@ -442,10 +442,10 @@ def init_db():
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id SERIAL PRIMARY KEY,
                 actor_id INTEGER,
-                action TEXT NOT NULL,
-                target_type TEXT,
+                action VARCHAR NOT NULL,
+                target_type VARCHAR,
                 target_id INTEGER,
-                details TEXT,
+                details VARCHAR,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
