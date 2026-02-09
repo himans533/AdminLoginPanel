@@ -22,9 +22,10 @@ import os
 import io
 from datetime import datetime, timezone, timedelta
 import logging
-import sqlite3
 import time
 from flask import redirect, url_for
+import psycopg2
+from urllib.parse import urlparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -180,8 +181,8 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'project_management.db')
 
 def get_db_connection():
     # Force use of SQLite
-    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DB_PATH, timeout=30, check_same_thread=False)
+    conn.row_factory = psycopg2.Row
     try:
         conn.execute('PRAGMA foreign_keys = ON')
         conn.execute('PRAGMA journal_mode = WAL')
