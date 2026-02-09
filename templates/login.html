@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="csrf-token" content="{{ csrf_token }}">
+        <title>Admin Panel - Login</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
+        <style>
+            :root {
+                --primary: #667eea;
+                --secondary: #764ba2;
+                --bg: #ffffff;
+                --bg-secondary: #f7fafc;
+                --text: #2d3748;
+                --text-secondary: #718096;
+                --border: #e2e8f0;
+                --shadow: rgba(0, 0, 0, 0.1);
+                --success: #48bb78;
+                --warning: #ed8936;
+                --danger: #f56565;
+                --info: #4299e1;
+                --hover: #edf2f7;
+            }
+
+            .dark-mode {
+                --bg: #1a202c;
+                --bg-secondary: #2d3748;
+                --text: #f7fafc;
+                --text-secondary: #a0aec0;
+                --border: #4a5568;
+                --shadow: rgba(0, 0, 0, 0.3);
+                --hover: #4a5568;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                transition:
+                    background-color 0.3s ease,
+                    color 0.3s ease,
+                    border-color 0.3s ease;
+            }
+
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--secondary) 100%
+                );
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+                color: var(--text);
+            }
+
+            .dark-mode body {
+                background: var(--bg-secondary);
+            }
+
+            .login-container {
+                background: var(--bg);
+                border-radius: 10px;
+                box-shadow: 0 10px 40px var(--shadow);
+                width: 100%;
+                max-width: 450px;
+                padding: 40px;
+                animation: slideIn 0.5s ease-out;
+                margin: 10px;
+                box-sizing: border-box;
+                position: relative;
+            }
+
+            .theme-toggle {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: var(--bg-secondary);
+                border: 2px solid var(--border);
+                border-radius: 50%;
+                width: 45px;
+                height: 45px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+                color: var(--text);
+                z-index: 10;
+            }
+
+            .theme-toggle:hover {
+                background: var(--hover);
+                transform: scale(1.05);
+            }
+
+            .theme-toggle i {
+                font-size: 18px;
+                transition: transform 0.3s ease;
+            }
+
+            @media (max-width: 480px) {
+                .login-container {
+                    max-width: 100%;
+                    padding: 20px;
+                    margin: 10px;
+                    border-radius: 8px;
+                }
+            }
+
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-30px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .login-tabs {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 30px;
+                border-bottom: 2px solid var(--border);
+            }
+
+            .login-tab {
+                flex: 1;
+                padding: 12px;
+                text-align: center;
+                cursor: pointer;
+                color: var(--text-secondary);
+                font-weight: 600;
+                border-bottom: 3px solid transparent;
+                transition: all 0.3s ease;
+                margin-bottom: -2px;
+            }
+
+            .login-tab.active {
+                color: var(--primary);
+                border-bottom-color: var(--primary);
+            }
+
+            .login-header {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .company-logo {
+                width: 80px;
+                height: auto;
+                margin-bottom: 15px;
+            }
+
+            .login-header h1 {
+                color: var(--text);
+                font-size: 28px;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .login-header h1 i {
+                color: var(--primary);
+            }
+
+            .login-header p {
+                color: var(--text-secondary);
+                font-size: 16px;
+                margin: 0;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 8px;
+                color: var(--text);
+                font-weight: 600;
+                font-size: 14px;
+            }
+
+            .form-group input {
+                width: 100%;
+                padding: 12px 15px;
+                border: 2px solid var(--border);
+                border-radius: 8px;
+                font-size: 16px;
+                font-family: inherit;
+                background: var(--bg);
+                color: var(--text);
+                transition: all 0.3s ease;
+            }
+
+            .form-group input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+            .form-group input::placeholder {
+                color: var(--text-secondary);
+            }
+
+            .btn {
+                width: 100%;
+                padding: 14px;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .btn-primary {
+                background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--secondary) 100%
+                );
+                color: white;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .alert {
+                padding: 12px 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                font-size: 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .alert-success {
+                background: rgba(72, 187, 120, 0.1);
+                color: var(--success);
+                border: 1px solid rgba(72, 187, 120, 0.2);
+            }
+
+            .alert-error {
+                background: rgba(245, 101, 101, 0.1);
+                color: var(--danger);
+                border: 1px solid rgba(245, 101, 101, 0.2);
+            }
+
+            .alert-info {
+                background: rgba(66, 153, 225, 0.1);
+                color: var(--info);
+                border: 1px solid rgba(66, 153, 225, 0.2);
+            }
+
+            .loading {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top-color: white;
+                animation: spin 1s ease-in-out infinite;
+            }
+
+            /* @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        } */
+
+            .forgot-password {
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .forgot-password a {
+                color: var(--primary);
+                text-decoration: none;
+                font-size: 14px;
+                transition: color 0.3s ease;
+            }
+
+            .forgot-password a:hover {
+                color: var(--secondary);
+                text-decoration: underline;
+                gap: 10px;
+            }
+
+            .login-header p {
+                color: #666;
+                font-size: 14px;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                color: var(--text);
+                display: block;
+                font-weight: 600;
+                margin-bottom: 8px;
+                font-size: 14px;
+            }
+
+            .form-group input {
+                width: 100%;
+                padding: 12px 15px;
+                border: 2px solid #e0e0e0;
+                border-radius: 5px;
+                font-size: 14px;
+                transition: all 0.3s ease;
+            }
+
+            .form-group input:focus {
+                border-color: #667eea;
+                outline: none;
+                box-shadow: 0 0 5px rgba(102, 126, 234, 0.5);
+            }
+
+            .alert {
+                padding: 12px 15px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+                display: none;
+                animation: slideIn 0.3s ease-out;
+            }
+
+            .alert.show {
+                display: block;
+            }
+
+            .alert-danger {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+
+            .alert-success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            .form-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 30px;
+            }
+
+            .form-actions button {
+                flex: 1;
+                padding: 12px 20px;
+                border: none;
+                border-radius: 5px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .btn-primary {
+                background-color: #667eea;
+                color: white;
+            }
+
+            .btn-primary:hover:not(:disabled) {
+                background-color: #5568d3;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            }
+
+            .btn-primary:active:not(:disabled) {
+                transform: translateY(0);
+            }
+
+            .btn-secondary {
+                background-color: #e0e0e0;
+                color: #333;
+            }
+
+            .btn-secondary:hover {
+                background-color: #d0d0d0;
+            }
+
+            .loading {
+                display: none;
+                text-align: center;
+                font-size: 14px;
+                color: #666;
+                margin-top: 10px;
+            }
+
+            /* 
+        .loading.show {
+            display: block;
+        } */
+
+            /* .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        } */
+
+            /* @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        } */
+
+            .otp-input {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+
+            .otp-input input {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                text-align: center;
+                border: 2px solid #e0e0e0;
+                border-radius: 5px;
+                font-weight: bold;
+                transition: all 0.3s ease;
+            }
+
+            .otp-input input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+            .otp-input input.error {
+                border-color: #dc3545;
+                box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+            }
+
+            .info-text {
+                font-size: 13px;
+                color: #666;
+                text-align: center;
+                margin-top: 15px;
+                line-height: 1.6;
+            }
+
+            .resend-otp {
+                text-align: center;
+                margin-top: 15px;
+            }
+
+            .resend-otp button {
+                background: none;
+                border: none;
+                color: #667eea;
+                cursor: pointer;
+                font-size: 13px;
+                text-decoration: underline;
+                transition: color 0.3s ease;
+            }
+
+            .resend-otp button:hover:not(:disabled) {
+                color: #5568d3;
+            }
+
+            .resend-otp button:disabled {
+                color: #ccc;
+                cursor: not-allowed;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            .recaptcha-container {
+                margin-bottom: 20px;
+                padding: 15px;
+                background: var(--bg-secondary);
+                border-radius: 8px;
+                border: 1px solid var(--border);
+            }
+
+            .recaptcha-checkbox {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                cursor: pointer;
+            }
+
+            .recaptcha-checkbox input {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                accent-color: var(--primary);
+            }
+
+            .recaptcha-label {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .recaptcha-label strong {
+                color: var(--text);
+                font-size: 14px;
+            }
+
+            .recaptcha-label small {
+                color: var(--text-secondary);
+                font-size: 11px;
+            }
+
+            .security-badge {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                margin-top: 15px;
+                font-size: 12px;
+                color: var(--text-secondary);
+            }
+
+            .security-badge i {
+                color: var(--success);
+            }
+        </style>
+        <script
+            src="https://www.google.com/recaptcha/api.js"
+            async
+            defer
+        ></script>
+    </head>
+
+    <body>
+        <div class="login-container">
+            <button
+                class="theme-toggle"
+                id="themeToggle"
+                onclick="toggleTheme()"
+                title="Toggle Dark Mode"
+            >
+                <i class="fas fa-moon"></i>
+            </button>
+            <div class="login-tabs">
+                <div class="login-tab active" onclick="switchTab('admin')">
+                    <i class="fas fa-shield-alt"></i> Admin Login
+                </div>
+                <div class="login-tab" onclick="switchTab('employee')">
+                    <i class="fas fa-user"></i> Employee Login
+                </div>
+            </div>
+
+            <div id="adminSection" class="login-section">
+                <div id="adminStep1Container" style="display: block">
+                    <div class="login-header">
+                        <img
+                            src="../static/lg.png"
+                            alt="Company Logo"
+                            class="company-logo"
+                        />
+                        <h1>Admin Login</h1>
+                        <p>Secure access to dashboard</p>
+                    </div>
+
+                    <div id="adminStep1Alert" class="alert"></div>
+
+                    <form
+                        id="adminStep1Form"
+                        onsubmit="handleAdminStep1(event)"
+                    >
+                        <div class="form-group">
+                            <label for="adminEmail">Email Address *</label>
+                            <input
+                                type="text"
+                                id="adminEmail"
+                                placeholder="admin@example.com or username"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminPassword">Password *</label>
+                            <input
+                                type="password"
+                                id="adminPassword"
+                                placeholder="Enter your password"
+                                required
+                            />
+                        </div>
+
+                        <div class="recaptcha-container">
+                            <div class="recaptcha-checkbox">
+                                <input
+                                    type="checkbox"
+                                    id="adminCaptcha"
+                                    required
+                                />
+                                <label
+                                    for="adminCaptcha"
+                                    class="recaptcha-label"
+                                >
+                                    <strong>I'm not a robot</strong>
+                                    <small
+                                        >This site is protected by reCAPTCHA and
+                                        the Google
+                                        <a
+                                            href="https://policies.google.com/privacy"
+                                            target="_blank"
+                                            style="color: var(--primary)"
+                                            >Privacy Policy</a
+                                        >
+                                        and
+                                        <a
+                                            href="https://policies.google.com/terms"
+                                            target="_blank"
+                                            style="color: var(--primary)"
+                                            >Terms of Service</a
+                                        >
+                                        apply.</small
+                                    >
+                                </label>
+                            </div>
+                            <div class="security-badge">
+                                <i class="fas fa-lock"></i>
+                                <span
+                                    >Secured with CAPTCHA & Multi-Factor
+                                    Authentication</span
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">
+                                Proceed to OTP
+                            </button>
+                        </div>
+
+                        <div class="loading" id="adminStep1Loading">
+                            <div class="spinner"></div>
+                            Verifying credentials...
+                        </div>
+                    </form>
+                </div>
+
+                <div id="adminStep2Container" style="display: none">
+                    <div class="login-header">
+                        <h1><i class="fas fa-lock"></i> Verify OTP</h1>
+                        <p>Enter the OTP sent to your email</p>
+                    </div>
+
+                    <div id="adminStep2Alert" class="alert"></div>
+
+                    <form
+                        id="adminStep2Form"
+                        onsubmit="handleAdminStep2(event)"
+                    >
+                        <div class="info-text">
+                            An OTP has been sent to your registered email. Enter
+                            it below to complete login.
+                        </div>
+
+                        <div class="otp-input" id="adminOtpInputContainer">
+                            <input
+                                type="text"
+                                maxlength="1"
+                                class="otp-digit"
+                                inputmode="numeric"
+                                required
+                            />
+                            <input
+                                type="text"
+                                maxlength="1"
+                                class="otp-digit"
+                                inputmode="numeric"
+                                required
+                            />
+                            <input
+                                type="text"
+                                maxlength="1"
+                                class="otp-digit"
+                                inputmode="numeric"
+                                required
+                            />
+                            <input
+                                type="text"
+                                maxlength="1"
+                                class="otp-digit"
+                                inputmode="numeric"
+                                required
+                            />
+                            <input
+                                type="text"
+                                maxlength="1"
+                                class="otp-digit"
+                                inputmode="numeric"
+                                required
+                            />
+                            <input
+                                type="text"
+                                maxlength="1"
+                                class="otp-digit"
+                                inputmode="numeric"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-actions">
+                            <button
+                                type="button"
+                                class="btn-secondary"
+                                onclick="goBackToAdminStep1()"
+                            >
+                                Back
+                            </button>
+                            <button type="submit" class="btn-primary">
+                                Verify & Login
+                            </button>
+                        </div>
+
+                        <div class="resend-otp">
+                            <button
+                                type="button"
+                                id="adminResendBtn"
+                                onclick="resendAdminOtp()"
+                            >
+                                Resend OTP
+                            </button>
+                            <span id="adminResendTimer"></span>
+                        </div>
+
+                        <div class="loading" id="adminStep2Loading">
+                            <div class="spinner"></div>
+                            Verifying OTP...
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div id="employeeSection" class="login-section hidden">
+                <div class="login-header">
+                    <img
+                        src="../static/lg.png"
+                        alt="Company Logo"
+                        class="company-logo"
+                    />
+                    <h1>Employee Login</h1>
+                    <p>Access your dashboard</p>
+                </div>
+
+                <div id="employeeAlert" class="alert"></div>
+
+                <form id="employeeForm" onsubmit="handleEmployeeLogin(event)">
+                    <div class="form-group">
+                        <label for="employeeEmail">Email Address *</label>
+                        <input
+                            type="email"
+                            id="employeeEmail"
+                            placeholder="employee@example.com"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="employeePassword">Password *</label>
+                        <input
+                            type="password"
+                            id="employeePassword"
+                            placeholder="Enter your password"
+                            required
+                        />
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Login</button>
+                    </div>
+
+                    <div class="loading" id="employeeLoading">
+                        Logging in...
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            const API_BASE = window.location.origin + "/api";
+            let adminId = null;
+            let adminResendTimer = 0;
+
+            function toggleTheme() {
+                const body = document.body;
+                const isDark = body.classList.toggle("dark-mode");
+                localStorage.setItem("theme", isDark ? "dark" : "light");
+                updateThemeIcon();
+            }
+
+            function updateThemeIcon() {
+                const icon = document.querySelector("#themeToggle i");
+                const isDark = document.body.classList.contains("dark-mode");
+                icon.className = isDark ? "fas fa-sun" : "fas fa-moon";
+            }
+
+            // Load saved theme
+            document.addEventListener("DOMContentLoaded", function () {
+                const savedTheme = localStorage.getItem("theme");
+                if (savedTheme === "dark") {
+                    document.body.classList.add("dark-mode");
+                }
+                updateThemeIcon();
+            });
+
+            function switchTab(tab) {
+                const adminSection = document.getElementById("adminSection");
+                const employeeSection =
+                    document.getElementById("employeeSection");
+                const tabs = document.querySelectorAll(".login-tab");
+
+                tabs.forEach((t) => t.classList.remove("active"));
+                event.target.closest(".login-tab").classList.add("active");
+
+                if (tab === "admin") {
+                    adminSection.classList.remove("hidden");
+                    employeeSection.classList.add("hidden");
+                } else {
+                    adminSection.classList.add("hidden");
+                    employeeSection.classList.remove("hidden");
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function () {
+                setupOtpInputs("adminOtpInputContainer");
+            });
+
+            function setupOtpInputs(containerId) {
+                const container = document.getElementById(containerId);
+                const otpInputs = container.querySelectorAll(".otp-digit");
+
+                otpInputs.forEach((input, index) => {
+                    input.addEventListener("input", function (e) {
+                        if (
+                            this.value.length === 1 &&
+                            index < otpInputs.length - 1
+                        ) {
+                            otpInputs[index + 1].focus();
+                        }
+                    });
+
+                    input.addEventListener("keydown", function (e) {
+                        if (
+                            e.key === "Backspace" &&
+                            this.value === "" &&
+                            index > 0
+                        ) {
+                            otpInputs[index - 1].focus();
+                        }
+                    });
+                });
+            }
+
+            function showAlert(containerId, message, type) {
+                const alert = document.getElementById(containerId);
+                alert.className = `alert show ${type === "danger" ? "alert-danger" : "alert-success"}`;
+                alert.innerHTML = message;
+            }
+
+            function clearAlert(containerId) {
+                const alert = document.getElementById(containerId);
+                alert.className = "alert";
+                alert.innerHTML = "";
+            }
+
+            async function handleAdminStep1(event) {
+                event.preventDefault();
+                clearAlert("adminStep1Alert");
+
+                const email = document
+                    .getElementById("adminEmail")
+                    .value.trim()
+                    .toLowerCase();
+                const password = document.getElementById("adminPassword").value;
+                const captchaChecked =
+                    document.getElementById("adminCaptcha").checked;
+
+                if (!email || !password) {
+                    showAlert(
+                        "adminStep1Alert",
+                        "All fields are required.",
+                        "danger",
+                    );
+                    return;
+                }
+
+                if (!captchaChecked) {
+                    showAlert(
+                        "adminStep1Alert",
+                        "Please verify that you are not a robot.",
+                        "danger",
+                    );
+                    return;
+                }
+
+                try {
+                    document
+                        .getElementById("adminStep1Loading")
+                        .classList.add("show");
+
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch(
+                        `${API_BASE}/admin/login/step1`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                            headers: { "Content-Type": "application/json", ...(csrf ? { 'X-CSRF-Token': csrf } : {}) },
+                            body: JSON.stringify({ email, password }),
+                        },
+                    );
+
+                    const data = await response.json();
+                    document
+                        .getElementById("adminStep1Loading")
+                        .classList.remove("show");
+
+                    if (!response.ok) {
+                        showAlert(
+                            "adminStep1Alert",
+                            data.error || "Authentication failed",
+                            "danger",
+                        );
+                        return;
+                    }
+
+                    adminId = data.admin_id;
+                    showAlert(
+                        "adminStep1Alert",
+                        "OTP sent successfully! Check your email.",
+                        "success",
+                    );
+
+                    setTimeout(() => {
+                        document.getElementById(
+                            "adminStep1Container",
+                        ).style.display = "none";
+                        document.getElementById(
+                            "adminStep2Container",
+                        ).style.display = "block";
+                        startAdminResendTimer();
+                    }, 1500);
+                } catch (error) {
+                    console.error(" Admin Step1 Error:", error);
+                    document
+                        .getElementById("adminStep1Loading")
+                        .classList.remove("show");
+                    showAlert(
+                        "adminStep1Alert",
+                        "Network error. Please try again.",
+                        "danger",
+                    );
+                }
+            }
+
+            async function handleAdminStep2(event) {
+                event.preventDefault();
+                clearAlert("adminStep2Alert");
+
+                const container = document.getElementById(
+                    "adminOtpInputContainer",
+                );
+                const otpInputs = container.querySelectorAll(".otp-digit");
+                const otp = Array.from(otpInputs)
+                    .map((i) => i.value.trim())
+                    .join("");
+
+                otpInputs.forEach((i) => i.classList.remove("error"));
+
+                if (otp.length !== 6) {
+                    showAlert(
+                        "adminStep2Alert",
+                        "Please enter all 6 digits of the OTP.",
+                        "danger",
+                    );
+                    otpInputs.forEach((i) => i.classList.add("error"));
+                    return;
+                }
+
+                try {
+                    const loadingEl =
+                        document.getElementById("adminStep2Loading");
+                    loadingEl.classList.add("show");
+
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch(
+                        `${API_BASE}/admin/login/step2`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                            headers: { "Content-Type": "application/json", ...(csrf ? { 'X-CSRF-Token': csrf } : {}) },
+                            body: JSON.stringify({ admin_id: adminId, otp }),
+                        },
+                    );
+
+                    const data = await response.json();
+                    loadingEl.classList.remove("show");
+
+                    if (!response.ok || !data.success) {
+                        showAlert(
+                            "adminStep2Alert",
+                            data.error || "OTP verification failed.",
+                            "danger",
+                        );
+                        return;
+                    }
+
+                    showAlert(
+                        "adminStep2Alert",
+                        "Login successful! Redirecting...",
+                        "success",
+                    );
+
+                    // Give browser 300ms to store session cookie
+                    setTimeout(() => {
+                        window.location.href = "/admin-dashboard";
+                    }, 300);
+                } catch (error) {
+                    console.error("Admin Step2 Error:", error);
+                    document
+                        .getElementById("adminStep2Loading")
+                        .classList.remove("show");
+                    showAlert(
+                        "adminStep2Alert",
+                        "Network error. Please try again.",
+                        "danger",
+                    );
+                }
+            }
+
+            async function handleEmployeeLogin(event) {
+                event.preventDefault();
+
+                const email = document
+                    .getElementById("employeeEmail")
+                    .value.trim()
+                    .toLowerCase();
+                const password =
+                    document.getElementById("employeePassword").value;
+
+                if (!email || !password) {
+                    showAlert(
+                        "employeeAlert",
+                        "Email and password are required.",
+                        "danger",
+                    );
+                    return;
+                }
+
+                try {
+                    document
+                        .getElementById("employeeLoading")
+                        .classList.add("show");
+
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch(`${API_BASE}/user/login`, {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            ...(csrf ? { 'X-CSRF-Token': csrf } : {})
+                        },
+                        credentials: "include", // <-- important: lets server set session cookie
+                        body: JSON.stringify({ email, password }),
+                    });
+
+                    const data = await response.json();
+                    document
+                        .getElementById("employeeLoading")
+                        .classList.remove("show");
+
+                    if (!response.ok) {
+                        showAlert(
+                            "employeeAlert",
+                            data.error || "Login failed",
+                            "danger",
+                        );
+                        return;
+                    }
+
+                    showAlert(
+                        "employeeAlert",
+                        "Login successful! Redirecting...",
+                        "success",
+                    );
+
+                    // Keep the token in localStorage if the frontend uses it for API calls,
+                    // but the session cookie will allow server-side login_required decorators to work.
+                    if (data.token) {
+                        localStorage.setItem("employee_token", data.token);
+                        if (data.csrf_token) {
+                            localStorage.setItem("csrf_token", data.csrf_token);
+                        }
+                    }
+                    localStorage.setItem(
+                        "employee_user",
+                        JSON.stringify({
+                            user_id: data.user_id,
+                            username: data.username,
+                            email: data.email,
+                            user_role: data.user_role || "Employee",
+                            permissions: data.permissions || {},
+                        }),
+                    );
+
+                    setTimeout(() => {
+                        window.location.href = "/employee-dashboard";
+                    }, 600);
+                } catch (error) {
+                    console.error("Employee Login Error:", error);
+                    document
+                        .getElementById("employeeLoading")
+                        .classList.remove("show");
+                    showAlert(
+                        "employeeAlert",
+                        "Network error. Please try again.",
+                        "danger",
+                    );
+                }
+            }
+
+            function goBackToAdminStep1() {
+                document.getElementById("adminStep2Container").style.display =
+                    "none";
+                document.getElementById("adminStep1Container").style.display =
+                    "block";
+                clearAlert("adminStep2Alert");
+
+                const otpInputs = document.querySelectorAll(
+                    "#adminOtpInputContainer .otp-digit",
+                );
+                otpInputs.forEach((input) => {
+                    input.value = "";
+                    input.classList.remove("error");
+                });
+            }
+
+            function startAdminResendTimer() {
+                adminResendTimer = 60;
+                const btn = document.getElementById("adminResendBtn");
+                const timer = document.getElementById("adminResendTimer");
+
+                btn.disabled = true;
+
+                const interval = setInterval(() => {
+                    adminResendTimer--;
+                    timer.textContent = `(${adminResendTimer}s)`;
+
+                    if (adminResendTimer <= 0) {
+                        clearInterval(interval);
+                        btn.disabled = false;
+                        timer.textContent = "";
+                    }
+                }, 1000);
+            }
+
+            async function resendAdminOtp() {
+                const email = document
+                    .getElementById("adminEmail")
+                    .value.trim()
+                    .toLowerCase();
+                const password = document.getElementById("adminPassword").value;
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const response = await fetch(
+                        `${API_BASE}/admin/login/step1`,
+                        {
+                            method: "POST",
+                            credentials: "include",
+                            headers: { "Content-Type": "application/json", ...(csrf ? { 'X-CSRF-Token': csrf } : {}) },
+                            body: JSON.stringify({ email, password }),
+                        },
+                    );
+
+                    if (response.ok) {
+                        showAlert(
+                            "adminStep2Alert",
+                            "OTP resent successfully!",
+                            "success",
+                        );
+                        startAdminResendTimer();
+                    }
+                } catch (error) {
+                    showAlert(
+                        "adminStep2Alert",
+                        "Failed to resend OTP.",
+                        "danger",
+                    );
+                }
+            }
+        </script>
+    </body>
+</html>

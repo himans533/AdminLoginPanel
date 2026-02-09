@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Task Reports - Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --bg: #ffffff;
+            --bg-secondary: #f7fafc;
+            --text: #2d3748;
+            --text-secondary: #718096;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --success: #48bb78;
+            --warning: #ed8936;
+            --danger: #f56565;
+            --info: #4299e1;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .container-max {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: var(--bg);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-card.approved .number {
+            color: var(--success);
+        }
+
+        .stat-card.pending .number {
+            color: var(--warning);
+        }
+
+        .stat-card.rejected .number {
+            color: var(--danger);
+        }
+
+        .filters-section {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-control, .form-select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: var(--bg);
+        }
+
+        .table-responsive {
+            background: var(--bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow);
+            overflow: hidden;
+        }
+
+        table {
+            margin: 0;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        table thead th {
+            padding: 15px;
+            font-weight: 600;
+            border: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.3s ease;
+        }
+
+        table tbody tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        table tbody td {
+            padding: 12px 15px;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.success {
+            background: rgba(72, 187, 120, 0.1);
+            color: var(--success);
+        }
+
+        .badge.warning {
+            background: rgba(237, 137, 54, 0.1);
+            color: var(--warning);
+        }
+
+        .badge.danger {
+            background: rgba(245, 101, 101, 0.1);
+            color: var(--danger);
+        }
+
+        .badge.info {
+            background: rgba(66, 153, 225, 0.1);
+            color: var(--info);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .modal-content {
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .pagination {
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .pagination .page-link {
+            color: var(--primary);
+            border-color: var(--border);
+        }
+
+        .pagination .page-link:hover {
+            background: var(--bg-secondary);
+            color: var(--secondary);
+        }
+
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: var(--primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--border);
+            margin-bottom: 15px;
+        }
+
+        .empty-state h3 {
+            color: var(--text);
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-max">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1><i class="fas fa-clipboard-list"></i> Daily Task Reports</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-info" onclick="openSubmitReportModal()" title="Submit report on behalf of an employee">
+                    <i class="fas fa-plus"></i> Submit Report
+                </button>
+                <button class="btn btn-success" onclick="exportReports()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+                <button class="btn btn-primary" onclick="location.href='/admin-dashboard'">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total Reports</h3>
+                <div class="number" id="totalReports">0</div>
+            </div>
+            <div class="stat-card approved">
+                <h3>Approved</h3>
+                <div class="number" id="approvedReports">0</div>
+            </div>
+            <div class="stat-card pending">
+                <h3>Pending</h3>
+                <div class="number" id="pendingReports">0</div>
+            </div>
+            <div class="stat-card rejected">
+                <h3>Rejected</h3>
+                <div class="number" id="rejectedReports">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Hours</h3>
+                <div class="number" id="totalHours">0</div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div style="background: var(--bg); padding: 30px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 4px 12px var(--shadow);">
+            <h3 style="margin-bottom: 20px; color: var(--primary); font-weight: 700;">
+                <i class="fas fa-chart-line"></i> Analytics Dashboard
+            </h3>
+            <div class="row" style="margin-bottom: 20px;">
+                <div class="col-md-6 mb-3">
+                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px;">
+                        <h6 style="color: var(--text-secondary); font-weight: 600; margin-bottom: 10px;">Status Distribution</h6>
+                        <canvas id="statusChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px;">
+                        <h6 style="color: var(--text-secondary); font-weight: 600; margin-bottom: 10px;">Approval Status</h6>
+                        <canvas id="approvalChart" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px;">
+                        <h6 style="color: var(--text-secondary); font-weight: 600; margin-bottom: 10px;">Daily Reports Trend (Last 7 Days)</h6>
+                        <canvas id="trendChart" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <h5 style="margin-bottom: 15px;">
+                <i class="fas fa-filter"></i> Filters
+            </h5>
+            <div class="filter-row">
+                <input type="date" id="dateFrom" class="form-control" placeholder="From Date">
+                <input type="date" id="dateTo" class="form-control" placeholder="To Date">
+                <input type="text" id="employeeSearch" class="form-control" placeholder="Employee Name...">
+                <select id="projectFilter" class="form-select">
+                    <option value="">All Projects</option>
+                </select>
+            </div>
+            <div class="filter-row">
+                <select id="statusFilter" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Blocked">Blocked</option>
+                </select>
+                <select id="approvalFilter" class="form-select">
+                    <option value="">All Approval Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <button class="btn btn-primary" onclick="applyFilters()">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button class="btn btn-secondary" onclick="clearFilters()">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Reports Table -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Employee</th>
+                        <th>Project</th>
+                        <th>Description</th>
+                        <th>Hours</th>
+                        <th>Status</th>
+                        <th>Approval</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportsTable">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin" style="color: var(--primary); font-size: 24px;"></i>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav id="paginationNav" style="display: none;">
+            <ul class="pagination">
+                <li class="page-item" id="prevPage">
+                    <a class="page-link" href="#" onclick="loadPage(currentPage - 1)">Previous</a>
+                </li>
+                <li class="page-item active" id="pageInfo">
+                    <span class="page-link">Page 1</span>
+                </li>
+                <li class="page-item" id="nextPage">
+                    <a class="page-link" href="#" onclick="loadPage(currentPage + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Submit Report Modal -->
+    <div class="modal fade" id="submitReportModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title"><i class="fas fa-file-invoice"></i> Submit Daily Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: brightness(0) invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="adminSubmitReportForm" onsubmit="submitReportOnBehalf(event)">
+                        <div class="form-group mb-3">
+                            <label for="employeeSelect" class="form-label"><strong>Select Employee *</strong></label>
+                            <select id="employeeSelect" class="form-select" required onchange="loadProjectsForEmployee(this.value)">
+                                <option value="">-- Select an Employee --</option>
+                            </select>
+                            <small class="form-text text-muted">Select the employee for whom you are submitting this report</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="adminReportProjectId" class="form-label"><strong>Project *</strong></label>
+                            <select id="adminReportProjectId" class="form-select" required onchange="loadTasksForAdminProject(this.value)">
+                                <option value="">-- Select Project --</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="adminReportTaskId" class="form-label"><strong>Task *</strong></label>
+                            <select id="adminReportTaskId" class="form-select" required>
+                                <option value="">-- Select Task --</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="adminReportDate" class="form-label"><strong>Report Date *</strong></label>
+                            <input type="date" id="adminReportDate" class="form-control" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="adminReportHours" class="form-label"><strong>Hours Spent *</strong></label>
+                                    <input type="number" id="adminReportHours" class="form-control" min="0" max="24" step="0.1" placeholder="e.g. 2.5" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="adminReportStatus" class="form-label"><strong>Status *</strong></label>
+                                    <select id="adminReportStatus" class="form-select" required>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Blocked">Blocked</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="adminReportDescription" class="form-label"><strong>Work Description *</strong></label>
+                            <textarea id="adminReportDescription" class="form-control" rows="4" placeholder="Describe what was worked on..." required></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="adminReportBlocker" class="form-label">Blockers (Optional)</label>
+                            <textarea id="adminReportBlocker" class="form-control" rows="2" placeholder="Any issues blocking progress?"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Modal -->
+    <div class="modal fade" id="approvalModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Review Report</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Report ID</label>
+                        <input type="text" id="reportId" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Comment</label>
+                        <textarea id="approvalComment" class="form-control" rows="4" placeholder="Enter your comment..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Decision</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="decision" id="approveBtn" value="approve">
+                            <label class="btn btn-outline-success" for="approveBtn">
+                                <i class="fas fa-check"></i> Approve
+                            </label>
+
+                            <input type="radio" class="btn-check" name="decision" id="rejectBtn" value="reject">
+                            <label class="btn btn-outline-danger" for="rejectBtn">
+                                <i class="fas fa-times"></i> Reject
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitApproval()">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Detail Modal -->
+    <div class="modal fade" id="reportDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Report Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="reportDetails">
+                    <!-- Loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/static/js/daily-reports.js"></script>
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        const approvalModal = new bootstrap.Modal(document.getElementById('approvalModal'));
+        const reportDetailModal = new bootstrap.Modal(document.getElementById('reportDetailModal'));
+
+        // Initialize
+        window.addEventListener('load', () => {
+            loadStats();
+            loadProjects();
+            loadReports();
+        });
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/daily-reports/dashboard/stats', { headers: dailyReportModule.getAuthHeaders() });
+                if (!response.ok) throw new Error('Failed to load stats');
+                
+                const data = await response.json();
+                document.getElementById('totalReports').textContent = data.summary.total_reports;
+                document.getElementById('approvedReports').textContent = data.summary.approved;
+                document.getElementById('pendingReports').textContent = data.summary.pending;
+                document.getElementById('rejectedReports').textContent = data.summary.rejected;
+                document.getElementById('totalHours').textContent = data.summary.total_hours.toFixed(1);
+                
+                // Load analytics charts
+                loadAnalyticsCharts();
+            } catch (error) {
+                console.error('Load stats error:', error);
+            }
+        }
+
+        let statusChart, approvalChart, trendChart;
+
+        async function loadAnalyticsCharts() {
+            try {
+                const response = await fetch('/api/daily-reports/stats', {
+                    headers: dailyReportModule.getAuthHeaders()
+                });
+                if (!response.ok) throw new Error('Failed to load analytics');
+                
+                const data = await response.json();
+                
+                // Status Distribution Chart
+                const statusCtx = document.getElementById('statusChart').getContext('2d');
+                if (statusChart) statusChart.destroy();
+                statusChart = new Chart(statusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['In Progress', 'Completed', 'Blocked'],
+                        datasets: [{
+                            data: [
+                                data.by_status?.['In Progress'] || 0,
+                                data.by_status?.['Completed'] || 0,
+                                data.by_status?.['Blocked'] || 0
+                            ],
+                            backgroundColor: ['#4299e1', '#48bb78', '#f56565'],
+                            borderColor: ['#2c5aa0', '#2f855a', '#c53030'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+                
+                // Approval Status Chart
+                const approvalCtx = document.getElementById('approvalChart').getContext('2d');
+                if (approvalChart) approvalChart.destroy();
+                approvalChart = new Chart(approvalCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Pending', 'Approved', 'Rejected'],
+                        datasets: [{
+                            data: [
+                                data.summary?.pending || 0,
+                                data.summary?.approved || 0,
+                                data.summary?.rejected || 0
+                            ],
+                            backgroundColor: ['#ed8936', '#48bb78', '#f56565'],
+                            borderColor: ['#c05621', '#2f855a', '#c53030'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
+                    }
+                });
+                
+                // Trend Chart (Last 7 days)
+                const trendCtx = document.getElementById('trendChart').getContext('2d');
+                if (trendChart) trendChart.destroy();
+                
+                const last7Days = [];
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    last7Days.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                }
+                
+                trendChart = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: last7Days,
+                        datasets: [{
+                            label: 'Reports Submitted',
+                            data: data.daily_trend || Array(7).fill(0),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#667eea'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Load analytics error:', error);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await fetch('/api/admin/projects', {
+                    headers: dailyReportModule.getAuthHeaders()
+                });
+                if (!response.ok) throw new Error('Failed to load projects');
+                
+                const projects = await response.json();
+                const select = document.getElementById('projectFilter');
+                projects.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.title;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Load projects error:', error);
+            }
+        }
+
+        async function loadReports(page = 1) {
+            try {
+                currentPage = page;
+                await dailyReportModule.fetchReports(page);
+                renderReportsTable();
+                updatePagination();
+            } catch (error) {
+                console.error('Load reports error:', error);
+            }
+        }
+
+        function applyFilters() {
+            dailyReportModule.setFilters({
+                startDate: document.getElementById('dateFrom').value,
+                endDate: document.getElementById('dateTo').value,
+                projectId: document.getElementById('projectFilter').value,
+                status: document.getElementById('statusFilter').value,
+                approvalStatus: document.getElementById('approvalFilter').value
+            });
+            loadReports(1);
+        }
+
+        function clearFilters() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            document.getElementById('employeeSearch').value = '';
+            document.getElementById('projectFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('approvalFilter').value = '';
+            dailyReportModule.clearFilters();
+            loadReports(1);
+        }
+
+        function renderReportsTable() {
+            const tbody = document.getElementById('reportsTable');
+            
+            if (!dailyReportModule.reports || dailyReportModule.reports.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>No reports found</h3>
+                            <p>No daily task reports match your filters</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = dailyReportModule.reports.map(report => `
+                <tr>
+                    <td>${dailyReportModule.formatDate(report.report_date)}</td>
+                    <td>${report.employee_name || 'N/A'}</td>
+                    <td>${report.project_title || 'N/A'}</td>
+                    <td title="${report.work_description}">
+                        ${(report.work_description || 'N/A').substring(0, 50)}...
+                    </td>
+                    <td>${dailyReportModule.formatTime(report.time_spent)}</td>
+                    <td>
+                        <span class="badge ${
+                            report.status === 'Completed' ? 'success' :
+                            report.status === 'Blocked' ? 'danger' : 'info'
+                        }">
+                            ${report.status}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${
+                            report.approval_status === 'approved' ? 'success' :
+                            report.approval_status === 'rejected' ? 'danger' : 'warning'
+                        }">
+                            ${report.approval_status}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-icon btn-outline-primary" onclick="viewReport(${report.id})" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${report.approval_status === 'pending' ? `
+                                <button class="btn btn-icon btn-outline-success" onclick="openApprovalModal(${report.id}, 'approve')" title="Approve">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-icon btn-outline-danger" onclick="openApprovalModal(${report.id}, 'reject')" title="Reject">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePagination() {
+            const navEl = document.getElementById('paginationNav');
+            if (dailyReportModule.totalReports > dailyReportModule.perPage) {
+                totalPages = Math.ceil(dailyReportModule.totalReports / dailyReportModule.perPage);
+                document.getElementById('pageInfo').innerHTML = `<span class="page-link">Page ${currentPage} of ${totalPages}</span>`;
+                navEl.style.display = 'flex';
+            } else {
+                navEl.style.display = 'none';
+            }
+        }
+
+        function loadPage(page) {
+            if (page >= 1 && page <= totalPages) {
+                loadReports(page);
+            }
+        }
+
+        function viewReport(reportId) {
+            // Load and display report details
+            const report = dailyReportModule.reports.find(r => r.id === reportId);
+            if (report) {
+                document.getElementById('reportDetails').innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6 form-group">
+                            <label><strong>Date</strong></label>
+                            <p>${dailyReportModule.formatDate(report.report_date)}</p>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label><strong>Employee</strong></label>
+                            <p>${report.employee_name}</p>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label><strong>Project</strong></label>
+                            <p>${report.project_title}</p>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label><strong>Hours</strong></label>
+                            <p>${dailyReportModule.formatTime(report.time_spent)}</p>
+                        </div>
+                        <div class="col-md-12 form-group">
+                            <label><strong>Description</strong></label>
+                            <p>${report.work_description}</p>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label><strong>Status</strong></label>
+                            <p><span class="badge success">${report.status}</span></p>
+                        </div>
+                        <div class="col-md-6 form-group">
+                            <label><strong>Approval</strong></label>
+                            <p><span class="badge ${
+                                report.approval_status === 'approved' ? 'success' :
+                                report.approval_status === 'rejected' ? 'danger' : 'warning'
+                            }">${report.approval_status}</span></p>
+                        </div>
+                        ${report.blocker ? `
+                            <div class="col-md-12 form-group">
+                                <label><strong>Blockers</strong></label>
+                                <p>${report.blocker}</p>
+                            </div>
+                        ` : ''}
+                        ${report.review_comment ? `
+                            <div class="col-md-12 form-group">
+                                <label><strong>Review Comment</strong></label>
+                                <p>${report.review_comment}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                reportDetailModal.show();
+            }
+        }
+
+        function openApprovalModal(reportId, decision) {
+            document.getElementById('reportId').value = reportId;
+            document.getElementById('approvalComment').value = '';
+            document.getElementById(decision + 'Btn').checked = true;
+            approvalModal.show();
+        }
+
+        async function submitApproval() {
+            const reportId = document.getElementById('reportId').value;
+            const comment = document.getElementById('approvalComment').value;
+            const decision = document.querySelector('input[name="decision"]:checked').value;
+
+            if (decision === 'approve') {
+                await dailyReportModule.approveReport(reportId, comment);
+            } else {
+                await dailyReportModule.rejectReport(reportId, comment);
+            }
+
+            approvalModal.hide();
+            loadReports(currentPage);
+            loadStats();
+        }
+
+        function exportReports() {
+            dailyReportModule.exportReports();
+        }
+
+        // Submit Report on Behalf Functions
+        const submitReportModal = new bootstrap.Modal(document.getElementById('submitReportModal'));
+
+        function openSubmitReportModal() {
+            loadEmployeesForSubmit();
+            document.getElementById('adminSubmitReportForm').reset();
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('adminReportDate').value = today;
+            submitReportModal.show();
+        }
+
+        async function loadEmployeesForSubmit() {
+            try {
+                const response = await fetch('/api/employees', {
+                    headers: dailyReportModule.getAuthHeaders()
+                });
+                if (!response.ok) throw new Error('Failed to load employees');
+                
+                const employees = await response.json();
+                const select = document.getElementById('employeeSelect');
+                select.innerHTML = '<option value="">-- Select an Employee --</option>';
+                employees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = emp.id;
+                    option.textContent = `${emp.username} (${emp.email})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Load employees error:', error);
+                alert('Failed to load employees');
+            }
+        }
+
+        async function loadProjectsForEmployee(employeeId) {
+            try {
+                const response = await fetch('/api/admin/projects', {
+                    headers: dailyReportModule.getAuthHeaders()
+                });
+                if (!response.ok) throw new Error('Failed to load projects');
+                
+                const projects = await response.json();
+                const select = document.getElementById('adminReportProjectId');
+                select.innerHTML = '<option value="">-- Select Project --</option>';
+                projects.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.title;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Load projects error:', error);
+            }
+        }
+
+        async function loadTasksForAdminProject(projectId) {
+            if (!projectId) {
+                document.getElementById('adminReportTaskId').innerHTML = '<option value="">-- Select Task --</option>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/projects/${projectId}/tasks`, {
+                    headers: dailyReportModule.getAuthHeaders()
+                });
+                if (!response.ok) throw new Error('Failed to load tasks');
+                
+                const tasks = await response.json();
+                const select = document.getElementById('adminReportTaskId');
+                select.innerHTML = '<option value="">-- Select Task --</option>';
+                tasks.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.id;
+                    option.textContent = t.title;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Load tasks error:', error);
+            }
+        }
+
+        async function submitReportOnBehalf(event) {
+            event.preventDefault();
+
+            const employeeId = document.getElementById('employeeSelect').value;
+            const projectId = document.getElementById('adminReportProjectId').value;
+            const taskId = document.getElementById('adminReportTaskId').value;
+            const reportDate = document.getElementById('adminReportDate').value;
+            const hours = document.getElementById('adminReportHours').value;
+            const status = document.getElementById('adminReportStatus').value;
+            const description = document.getElementById('adminReportDescription').value;
+            const blocker = document.getElementById('adminReportBlocker').value;
+
+            if (!employeeId || !projectId || !taskId || !reportDate || !hours || !description) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            try {
+                // Note: The API endpoint needs to support submitting reports on behalf
+                // This would require a modified endpoint that accepts employee_id
+                const response = await fetch('/api/daily-report', {
+                    method: 'POST',
+                    headers: dailyReportModule.getAuthHeaders('application/json'),
+                    body: JSON.stringify({
+                        user_id: employeeId,  // Admin submitting for specific employee
+                        task_id: taskId,
+                        project_id: projectId,
+                        report_date: reportDate,
+                        time_spent: parseFloat(hours),
+                        status: status,
+                        work_description: description,
+                        blocker: blocker
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Report submitted successfully!');
+                    submitReportModal.hide();
+                    document.getElementById('adminSubmitReportForm').reset();
+                    loadReports(currentPage);
+                    loadStats();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Failed to submit report');
+                    console.error('Submit error:', error);
+                }
+            } catch (error) {
+                console.error('Submit report error:', error);
+                alert('An error occurred while submitting the report.');
+            }
+        }
+    </script>
+</body>
+
+</html>
+
+  <script>
+    async function fetchFilters(){
+      const [usersRes, projectsRes] = await Promise.all([fetch('/api/users'), fetch('/api/admin/projects')]);
+      if(usersRes.ok){
+        const users = await usersRes.json();
+        const uSel = document.getElementById('filterUser');
+        users.forEach(u=>{ const o=document.createElement('option'); o.value=u.id; o.textContent=u.username; uSel.appendChild(o)});
+      }
+      if(projectsRes.ok){
+        const projects = await projectsRes.json();
+        const pSel = document.getElementById('filterProject');
+        projects.forEach(p=>{ const o=document.createElement('option'); o.value=p.id; o.textContent=p.title; pSel.appendChild(o)});
+      }
+    }
+
+    async function loadReports(){
+      const params = new URLSearchParams();
+      const date = document.getElementById('filterDate').value;
+      const project = document.getElementById('filterProject').value;
+      const user = document.getElementById('filterUser').value;
+      const approval = document.getElementById('filterApproval').value;
+      if(date) params.set('date', date);
+      if(project) params.set('project_id', project);
+      if(user) params.set('employee_id', user);
+      const res = await fetch('/api/admin/daily-reports?' + params.toString());
+      if(res.ok){
+        const rows = await res.json();
+        const tb = document.querySelector('#reportsTable tbody'); tb.innerHTML='';
+        rows.forEach(r=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${r.report_date||r.date||''}</td>
+            <td>${r.employee_name||r.employee||''}</td>
+            <td>${r.project_name||r.project_name||''}</td>
+            <td>${r.task_title||r.task||''}</td>
+            <td>${r.work_description||r.result||r.communication||''}</td>
+            <td>${r.time_spent||''}</td>
+            <td>${r.status||''}</td>
+            <td>${r.approval_status||r.approval||''}</td>
+            <td>${r.reviewer_name||''}</td>
+            <td><button class="btn btn-sm btn-primary" onclick="openReview(${r.id})">Review</button></td>
+          `;
+          tb.appendChild(tr);
+        })
+      }
+    }
+
+    function openReview(id){
+      const reason = prompt('Enter review comment (leave blank to auto)');
+      const approval = prompt('Type approved or rejected','approved');
+      if(!approval) return;
+      fetch('/api/admin/daily-reports/'+id+'/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({approval_status:approval, review_comment:reason})}).then(r=>{ if(r.ok){ alert('Saved'); loadReports() } else r.json().then(j=>alert(j.error||'failed')) })
+    }
+
+    document.getElementById('filterDate').addEventListener('change', loadReports);
+    document.getElementById('filterProject').addEventListener('change', loadReports);
+    document.getElementById('filterUser').addEventListener('change', loadReports);
+    document.getElementById('filterApproval').addEventListener('change', loadReports);
+
+    fetchFilters().then(loadReports).catch(()=>loadReports());
+  </script>
+</body>
+</html>
