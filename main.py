@@ -180,11 +180,15 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 
 
 def get_db_connection():
-    if not DATABASE_URL:
-        raise ValueError("DATABASE_URL environment variable not set")
-    conn = psycopg2.connect(DATABASE_URL)
+    url = urlparse(os.environ.get("DATABASE_URL"))
+    conn = psycopg2.connect(
+        host=url.hostname,
+        database=url.path[1:],
+        user=url.username,
+        password=url.password,
+        port=url.port
+    )
     return conn
-
 
 
 # REFACTORED init_db to be NON-DESTRUCTIVE and IDEMPOTENT
