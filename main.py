@@ -174,9 +174,9 @@ if Limiter is not None:
 else:
     logger.info("flask-limiter not installed; skipping rate-limiter setup")
 
-ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'anubha@gmail.com').lower()
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'anubha@yeseartheco.com').lower()
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Anubha@#46')
-ADMIN_OTP = os.environ.get('ADMIN_OTP', '123456')
+ADMIN_OTP = os.environ.get('ADMIN_OTP', '121212')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB max
