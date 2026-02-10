@@ -495,10 +495,8 @@ def init_db():
         rows = cursor.fetchall()
         existing_types = {}
         for row in rows:
-            if db_type == "postgres":
-                existing_types[row[1]] = row[0]
-            else:
-                existing_types[row['user_role']] = row['id']
+            # DictCursor and SQLite Row both support dict-like access
+            existing_types[row['user_role']] = row['id']
         
         defaults = {
             'Administrator': 'Full system access and management',
@@ -509,11 +507,9 @@ def init_db():
         ids = {}
         for role, desc in defaults.items():
             if role not in existing_types:
-                cursor.execute("INSERT INTO usertypes (user_role, description) VALUES (%s, %s)", (role, desc))
-                if db_type == "postgres":
-                    ids[role] = cursor.lastrowid if hasattr(cursor, 'lastrowid') else None
-                else:
-                    ids[role] = cursor.lastrowid
+                cursor.execute("INSERT INTO usertypes (user_role, description) VALUES (%s, %s) RETURNING id", (role, desc))
+                new_id = cursor.fetchone()
+                ids[role] = new_id['id'] if new_id else None
             else:
                 ids[role] = existing_types[role]
                 cursor.execute("UPDATE usertypes SET description = %s WHERE id = %s AND (description IS NULL OR description = '' OR description = '-')",(desc, ids[role]))
@@ -525,10 +521,7 @@ def init_db():
                 cursor.execute("SELECT id FROM usertype_permissions WHERE usertype_id = %s AND module = %s AND action = %s", (ut_id, module, action))
                 exists = cursor.fetchone()
                 if exists:
-                    if db_type == "postgres":
-                        cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists[0],))
-                    else:
-                        cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists[0],))
+                    cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists['id'],))
                 else:
                     cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, 1)", (ut_id, module, action))
 
@@ -616,7 +609,7 @@ def migrate_db():
         # Create usertype_permissions table if not exists
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usertype_permissions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 usertype_id INTEGER NOT NULL,
                 module TEXT NOT NULL,
                 action TEXT NOT NULL,
@@ -671,10 +664,10 @@ def migrate_db():
                         cursor.execute(
                             "SELECT column_name FROM information_schema.columns WHERE table_name='daily_task_reports'"
                         )
-                        cols = [r[0] for r in cursor.fetchall()]
+                        cols = [r['column_name'] for r in cursor.fetchall()]
                     else:
                         cursor.execute('PRAGMA table_info(daily_task_reports)')
-                        cols = [r[1] for r in cursor.fetchall()]
+                        cols = [r['name'] for r in cursor.fetchall()]
                     
                     if 'user_id' in cols and 'employee_id' in cols:
                         cursor.execute(
