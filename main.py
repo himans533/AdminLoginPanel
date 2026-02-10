@@ -242,158 +242,166 @@ def init_db():
             conn.close()
 
         # Usertype Permissions (dependent on usertypes)
-        cursor.execute('''
+           cursor.execute('''
             CREATE TABLE IF NOT EXISTS usertype_permissions (
-                SERIAL PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 usertype_id INTEGER NOT NULL,
-                module VARCHAR NOT NULL,
-                action VARCHAR NOT NULL,
-                granted BOOLEAN DEFAULT 0,
+                module TEXT NOT NULL,
+                action TEXT NOT NULL,
+                granted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (usertype_id) REFERENCES usertypes(id) ON DELETE CASCADE,
                 UNIQUE(usertype_id, module, action)
             )
         ''')
 
         # Users (dependent on usertypes)
-        cursor.execute('''
+     cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
-                username VARCHAR NOT NULL UNIQUE,
-                email VARCHAR NOT NULL UNIQUE,
-                password VARCHAR NOT NULL,
+                username TEXT NOT NULL UNIQUE,
+                email TEXT NOT NULL UNIQUE,
+                password TEXT NOT NULL,
                 user_type_id INTEGER NOT NULL,
-                granted BOOLEAN DEFAULT 0,
-                status VARCHAR DEFAULT 'Active',
-                phone VARCHAR,
-                department VARCHAR,
-                bio VARCHAR,
-                avatar_url VARCHAR,
+                granted BOOLEAN DEFAULT FALSE,
+                status TEXT DEFAULT 'Active',
+                phone TEXT,
+                department TEXT,
+                bio TEXT,
+                avatar_url TEXT,
                 is_system INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_type_id) REFERENCES usertypes(id)
             )
         ''')
-        
-        # Ensure 'is_system' column
-        try: cursor.execute("ALTER TABLE users ADD COLUMN is_system INTEGER DEFAULT 0")
-        except: pass
 
         # User Permissions (dependent on users)
-        cursor.execute('''
+          cursor.execute('''
             CREATE TABLE IF NOT EXISTS user_permissions (
                 id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL,
-                module VARCHAR NOT NULL,
-                action VARCHAR NOT NULL,
-                granted BOOLEAN DEFAULT 0,
+                module TEXT NOT NULL,
+                action TEXT NOT NULL,
+                granted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 UNIQUE(user_id, module, action)
             )
         ''')
 
         # Projects (dependent on users)
-        cursor.execute('''CREATE TABLE IF NOT EXISTS projects (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR NOT NULL,
-            description VARCHAR,
-            status VARCHAR DEFAULT 'In Progress',
-            progress INTEGER DEFAULT 0,
-            deadline DATE,
-            reporting_time TIME DEFAULT '09:00',
-            created_by_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            completed_at TIMESTAMP,
-            FOREIGN KEY (created_by_id) REFERENCES users(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS projects (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT,
+                status TEXT DEFAULT 'In Progress',
+                progress INTEGER DEFAULT 0,
+                deadline DATE,
+                reporting_time TIME DEFAULT '09:00',
+                created_by_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP,
+                FOREIGN KEY (created_by_id) REFERENCES users(id)
+            )
+        ''')
 
         # Tasks (dependent on projects, users)
-        cursor.execute('''CREATE TABLE IF NOT EXISTS tasks (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR NOT NULL,
-            description VARCHAR,
-            status VARCHAR DEFAULT 'Pending',
-            priority VARCHAR DEFAULT 'Medium',
-            deadline DATE,
-            project_id INTEGER NOT NULL,
-            created_by_id INTEGER NOT NULL,
-            assigned_to_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            completed_at TIMESTAMP,
-            approval_status VARCHAR DEFAULT 'pending',
-            weightage INTEGER DEFAULT 1,
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            FOREIGN KEY (created_by_id) REFERENCES users(id),
-            FOREIGN KEY (assigned_to_id) REFERENCES users(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tasks (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT,
+                status TEXT DEFAULT 'Pending',
+                priority TEXT DEFAULT 'Medium',
+                deadline DATE,
+                project_id INTEGER NOT NULL,
+                created_by_id INTEGER NOT NULL,
+                assigned_to_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP,
+                approval_status TEXT DEFAULT 'pending',
+                weightage INTEGER DEFAULT 1,
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                FOREIGN KEY (created_by_id) REFERENCES users(id),
+                FOREIGN KEY (assigned_to_id) REFERENCES users(id)
+            )
+        ''')
 
         # Comments (dependent on users, projects, tasks)
-        cursor.execute('''CREATE TABLE IF NOT EXISTS comments (
-            id SERIAL PRIMARY KEY,
-            content VARCHAR NOT NULL,
-            author_id INTEGER NOT NULL,
-            project_id INTEGER,
-            task_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (author_id) REFERENCES users(id),
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            FOREIGN KEY (task_id) REFERENCES tasks(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS comments (
+                id SERIAL PRIMARY KEY,
+                content TEXT NOT NULL,
+                author_id INTEGER NOT NULL,
+                project_id INTEGER,
+                task_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (author_id) REFERENCES users(id),
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                FOREIGN KEY (task_id) REFERENCES tasks(id)
+            )
+        ''')
 
         # Documents
-        cursor.execute('''CREATE TABLE IF NOT EXISTS documents (
-            id SERIAL PRIMARY KEY,
-            filename VARCHAR NOT NULL,
-            original_filename TEXT NOT NULL,
-            file_size INTEGER,
-            uploaded_by_id INTEGER NOT NULL,
-            project_id INTEGER,
-            task_id INTEGER,
-            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (uploaded_by_id) REFERENCES users(id),
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            FOREIGN KEY (task_id) REFERENCES tasks(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS documents (
+                id SERIAL PRIMARY KEY,
+                filename TEXT NOT NULL,
+                original_filename TEXT NOT NULL,
+                file_size INTEGER,
+                uploaded_by_id INTEGER NOT NULL,
+                project_id INTEGER,
+                task_id INTEGER,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (uploaded_by_id) REFERENCES users(id),
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                FOREIGN KEY (task_id) REFERENCES tasks(id)
+            )
+        ''')
 
         # Milestones
-        cursor.execute('''CREATE TABLE IF NOT EXISTS milestones (
-            id SERIAL PRIMARY KEY,
-            title VARCHAR NOT NULL,
-            description VARCHAR,
-            due_date DATE,
-            status VARCHAR DEFAULT 'Pending',
-            project_id INTEGER NOT NULL,
-            weightage INTEGER DEFAULT 1,
-            created_by_id INTEGER NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            FOREIGN KEY (created_by_id) REFERENCES users(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS milestones (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT,
+                due_date DATE,
+                status TEXT DEFAULT 'Pending',
+                project_id INTEGER NOT NULL,
+                weightage INTEGER DEFAULT 1,
+                created_by_id INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                FOREIGN KEY (created_by_id) REFERENCES users(id)
+            )
+        ''')
 
-        # Project Assignments
-        cursor.execute('''CREATE TABLE IF NOT EXISTS project_assignments (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            project_id INTEGER NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            UNIQUE(user_id, project_id)
-        )''')
+
+          cursor.execute('''
+            CREATE TABLE IF NOT EXISTS project_assignments (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                project_id INTEGER NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                UNIQUE(user_id, project_id)
+            )
+        ''')
 
         # Progress History
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS progress_history (
-            id SERIAL PRIMARY KEY,
-            project_id INTEGER NOT NULL,
-            progress_percentage INTEGER,
-            tasks_completed INTEGER,
-            total_tasks INTEGER,
-            milestones_completed INTEGER,
-            total_milestones INTEGER,
-            recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (project_id) REFERENCES projects(id)
-        )
+            CREATE TABLE IF NOT EXISTS progress_history (
+                id SERIAL PRIMARY KEY,
+                project_id INTEGER NOT NULL,
+                progress_percentage INTEGER,
+                tasks_completed INTEGER,
+                total_tasks INTEGER,
+                milestones_completed INTEGER,
+                total_milestones INTEGER,
+                recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects(id)
+            )
         ''')
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_progress_project_date 
@@ -401,78 +409,93 @@ def init_db():
         ''')
 
         # Activities
-        cursor.execute('''CREATE TABLE IF NOT EXISTS activities (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            activity_type VARCHAR NOT NULL,
-            description VARCHAR NOT NULL,
-            project_id INTEGER,
-            task_id INTEGER,
-            milestone_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            FOREIGN KEY (task_id) REFERENCES tasks(id),
-            FOREIGN KEY (milestone_id) REFERENCES milestones(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS activities (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                activity_type TEXT NOT NULL,
+                description TEXT NOT NULL,
+                project_id INTEGER,
+                task_id INTEGER,
+                milestone_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                FOREIGN KEY (task_id) REFERENCES tasks(id),
+                FOREIGN KEY (milestone_id) REFERENCES milestones(id)
+            )
+        ''')
 
         # User Skills
-        cursor.execute('''CREATE TABLE IF NOT EXISTS user_skills (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            skill_name VARCHAR NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            UNIQUE(user_id, skill_name)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_skills (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                skill_name TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                UNIQUE(user_id, skill_name)
+            )
+        ''')
 
         # Daily Reports
-        cursor.execute('''CREATE TABLE IF NOT EXISTS daily_task_reports (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            task_id INTEGER NOT NULL,
-            project_id INTEGER NOT NULL,
-            report_date DATE NOT NULL,
-            work_description VARCHAR,
-            time_spent REAL DEFAULT 0,
-            status VARCHAR DEFAULT 'In Progress',
-            blocker VARCHAR,
-            approval_status VARCHAR DEFAULT 'pending',
-            reviewed_by INTEGER,
-            review_comment VARCHAR,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id),
-            FOREIGN KEY (task_id) REFERENCES tasks(id),
-            FOREIGN KEY (project_id) REFERENCES projects(id),
-            FOREIGN KEY (reviewed_by) REFERENCES users(id),
-            UNIQUE(user_id, task_id, report_date)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS daily_task_reports (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                task_id INTEGER,
+                project_id INTEGER NOT NULL,
+                report_date DATE NOT NULL,
+                work_description TEXT,
+                time_spent REAL DEFAULT 0,
+                status TEXT DEFAULT 'In Progress',
+                blocker TEXT,
+                approval_status TEXT DEFAULT 'pending',
+                reviewed_by INTEGER,
+                review_comment TEXT,
+                result_of_effort TEXT,
+                remarks TEXT,
+                communication_email TEXT,
+                communication_phone TEXT,
+                task_assigned_by_id INTEGER,
+                is_locked INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (task_id) REFERENCES tasks(id),
+                FOREIGN KEY (project_id) REFERENCES projects(id),
+                FOREIGN KEY (reviewed_by) REFERENCES users(id),
+                UNIQUE(user_id, task_id, report_date)
+            )
+        ''')
 
         # Report Comments
-        cursor.execute('''CREATE TABLE IF NOT EXISTS report_comments (
-            id SERIAL PRIMARY KEY,
-            report_id INTEGER NOT NULL,
-            commenter_id INTEGER NOT NULL,
-            comment VARCHAR NOT NULL,
-            internal BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (report_id) REFERENCES daily_task_reports(id),
-            FOREIGN KEY (commenter_id) REFERENCES users(id)
-        )''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS report_comments (
+                id SERIAL PRIMARY KEY,
+                report_id INTEGER NOT NULL,
+                commenter_id INTEGER NOT NULL,
+                comment TEXT NOT NULL,
+                internal BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (report_id) REFERENCES daily_task_reports(id),
+                FOREIGN KEY (commenter_id) REFERENCES users(id)
+            )
+        ''')
         
         # Audit Logs (Missing in original init_db properly but used in code)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS audit_logs (
                 id SERIAL PRIMARY KEY,
                 actor_id INTEGER,
-                action VARCHAR NOT NULL,
-                target_type VARCHAR,
+                action TEXT NOT NULL,
+                target_type TEXT,
                 target_id INTEGER,
-                details VARCHAR,
+                details TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+
 
         # Seed initial data if usertypes are empty or missing details
         cursor.execute("SELECT id, user_role FROM usertypes WHERE user_role IN ('Administrator', 'Employee', 'Project-Cordinator')")
@@ -546,15 +569,11 @@ def init_db():
 
 
 def migrate_db():
-    """Add new columns without wiping existing data"""
-
+    """Add missing columns to existing tables (non-destructive)"""
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # Enable foreign keys in SQLite
-        cursor.execute("PRAGMA foreign_keys = ON")
 
         # List of columns to add (table, column, col_type)
         columns_to_add = [
@@ -565,24 +584,29 @@ def migrate_db():
             ("users", "status", "TEXT DEFAULT 'Active'"),
             ("projects", "completed_at", "TIMESTAMP"),
             ("projects", "reporting_time", "TIME"),
+            ("usertypes", "description", "TEXT"),
         ]
 
         for table, column, col_type in columns_to_add:
             try:
-                cursor.execute(
-                    f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
-            except Exception as e:
-                if "duplicate column name" in str(
-                        e).lower() or "already exists" in str(e).lower():
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+                logger.info(f"Added column {column} to table {table}")
+            except psycopg2.Error as e:
+                if "already exists" in str(e).lower() or "duplicate column" in str(e).lower():
                     pass  # Column already exists, skip
                 else:
-                    raise
+                    logger.warning(f"Could not add {column} to {table}: {e}")
 
-        # Add usertypes description column
-        try:
-            cursor.execute("ALTER TABLE usertypes ADD COLUMN description TEXT")
-        except Exception:
-            pass
+        conn.commit()
+        print("[OK] Database migration completed!")
+
+    except Exception as e:
+        print(f"[ERROR] Database migration failed: {e}")
+        if conn:
+            conn.rollback()
+    finally:
+        if conn:
+            conn.close()
 
         # Create usertype_permissions table if not exists
         cursor.execute('''
