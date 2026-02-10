@@ -25,6 +25,8 @@ import logging
 import time
 from flask import redirect, url_for
 import psycopg2
+import psycopg2.extras  # For DictCursor
+import sqlite3  # For backward compatibility with local SQLite
 from urllib.parse import urlparse
 
 logging.basicConfig(level=logging.INFO)
@@ -179,6 +181,29 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 
+class PostgreSQLConnection:
+    """Wrapper for psycopg2 connection to emulate SQLite row_factory behavior"""
+    def __init__(self, psycopg2_conn):
+        self._conn = psycopg2_conn
+        self._committed = False
+    
+    def cursor(self, **kwargs):
+        return self._conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    
+    def commit(self):
+        self._conn.commit()
+        self._committed = True
+    
+    def rollback(self):
+        self._conn.rollback()
+    
+    def close(self):
+        self._conn.close()
+    
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+
 def get_db_connection():
     database_url = os.getenv("DATABASE_URL")
 
@@ -192,7 +217,7 @@ def get_db_connection():
             password=url.password,
             dbname=url.path[1:]
         )
-        return conn, "postgres"
+        return PostgreSQLConnection(conn), "postgres"
 
     # Else local SQLite
     conn = sqlite3.connect("project_management.db")
@@ -203,6 +228,7 @@ def get_db_connection():
 # REFACTORED init_db to be NON-DESTRUCTIVE and IDEMPOTENT
 def init_db():
     conn = None
+    cursor = None
     try:
         conn, db_type = get_db_connection()
         cursor = conn.cursor()
@@ -218,33 +244,27 @@ def init_db():
         """)
 
         # 2️⃣ Safely add description column if old DB (Postgres way)
-        cursor.execute("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1
-                    FROM information_schema.columns
-                    WHERE table_name='usertypes' AND column_name='description'
-                ) THEN
-                    ALTER TABLE usertypes ADD COLUMN description TEXT;
-                END IF;
-            END$$;
-        """)
-
-        conn.commit()
-        print("✅ usertypes table initialized successfully")
-
-    except Exception as e:
-        print("[ERROR] Database initialization failed:", e)
-
-    finally:
-        if conn:
-            conn.close()
+        if db_type == "postgres":
+            try:
+                cursor.execute("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1
+                            FROM information_schema.columns
+                            WHERE table_name='usertypes' AND column_name='description'
+                        ) THEN
+                            ALTER TABLE usertypes ADD COLUMN description TEXT;
+                        END IF;
+                    END$$;
+                """)
+            except Exception:
+                pass
 
         # Usertype Permissions (dependent on usertypes)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS usertype_permissions (
-                SERIAL PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 usertype_id INTEGER NOT NULL,
                 module VARCHAR NOT NULL,
                 action VARCHAR NOT NULL,
@@ -273,10 +293,6 @@ def init_db():
                 FOREIGN KEY (user_type_id) REFERENCES usertypes(id)
             )
         ''')
-        
-        # Ensure 'is_system' column
-        try: cursor.execute("ALTER TABLE users ADD COLUMN is_system INTEGER DEFAULT 0")
-        except: pass
 
         # User Permissions (dependent on users)
         cursor.execute('''
@@ -476,7 +492,13 @@ def init_db():
 
         # Seed initial data if usertypes are empty or missing details
         cursor.execute("SELECT id, user_role FROM usertypes WHERE user_role IN ('Administrator', 'Employee', 'Project-Cordinator')")
-        existing_types = {row['user_role']: row['id'] for row in cursor.fetchall()}
+        rows = cursor.fetchall()
+        existing_types = {}
+        for row in rows:
+            if db_type == "postgres":
+                existing_types[row[1]] = row[0]
+            else:
+                existing_types[row['user_role']] = row['id']
         
         defaults = {
             'Administrator': 'Full system access and management',
@@ -488,7 +510,10 @@ def init_db():
         for role, desc in defaults.items():
             if role not in existing_types:
                 cursor.execute("INSERT INTO usertypes (user_role, description) VALUES (%s, %s)", (role, desc))
-                ids[role] = cursor.lastrowid
+                if db_type == "postgres":
+                    ids[role] = cursor.lastrowid if hasattr(cursor, 'lastrowid') else None
+                else:
+                    ids[role] = cursor.lastrowid
             else:
                 ids[role] = existing_types[role]
                 cursor.execute("UPDATE usertypes SET description = %s WHERE id = %s AND (description IS NULL OR description = '' OR description = '-')",(desc, ids[role]))
@@ -497,11 +522,13 @@ def init_db():
         def seed_perms(ut_id, perms):
             if not ut_id: return
             for module, action in perms:
-                # Check if exists
                 cursor.execute("SELECT id FROM usertype_permissions WHERE usertype_id = %s AND module = %s AND action = %s", (ut_id, module, action))
                 exists = cursor.fetchone()
                 if exists:
-                    cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists[0],))
+                    if db_type == "postgres":
+                        cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists[0],))
+                    else:
+                        cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists[0],))
                 else:
                     cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, 1)", (ut_id, module, action))
 
@@ -541,6 +568,8 @@ def init_db():
         if conn:
             conn.rollback()
     finally:
+        if cursor:
+            cursor.close()
         if conn:
             conn.close()
 
@@ -550,11 +579,11 @@ def migrate_db():
 
     conn = None
     try:
-        conn = get_db_connection()
+        conn, db_type = get_db_connection()
         cursor = conn.cursor()
 
-        # Enable foreign keys in SQLite
-        cursor.execute("PRAGMA foreign_keys = ON")
+        # Note: PostgreSQL handles foreign keys by default
+        # No need for PRAGMA foreign_keys = ON (SQLite only)
 
         # List of columns to add (table, column, col_type)
         columns_to_add = [
@@ -624,17 +653,29 @@ def migrate_db():
                     else:
                         raise
 
-        # If user_id is missing but employee_id exists, backfill user_id
+        # If user_id is missing but employee_id exists, backfill user_id (PostgreSQL version)
         try:
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='daily_task_reports'"
-            )
+            if db_type == "postgres":
+                cursor.execute(
+                    "SELECT table_name FROM information_schema.tables WHERE table_name='daily_task_reports'"
+                )
+            else:
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='daily_task_reports'"
+                )
+            
             if cursor.fetchone():
-                # Add user_id if not present (safeguard)
-                # Backfill where possible
+                # For PostgreSQL column info
                 try:
-                    cursor.execute('PRAGMA table_info(daily_task_reports)')
-                    cols = [r[1] for r in cursor.fetchall()]
+                    if db_type == "postgres":
+                        cursor.execute(
+                            "SELECT column_name FROM information_schema.columns WHERE table_name='daily_task_reports'"
+                        )
+                        cols = [r[0] for r in cursor.fetchall()]
+                    else:
+                        cursor.execute('PRAGMA table_info(daily_task_reports)')
+                        cols = [r[1] for r in cursor.fetchall()]
+                    
                     if 'user_id' in cols and 'employee_id' in cols:
                         cursor.execute(
                             'UPDATE daily_task_reports SET user_id = employee_id WHERE user_id IS NULL'
@@ -660,14 +701,14 @@ def init_daily_report_module():
     """Ensure Daily Task Reporting tables exist with correct schema (non-destructive)"""
     conn = None
     try:
-        conn = get_db_connection()
+        conn, db_type = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("PRAGMA foreign_keys = ON")
+        # Note: PostgreSQL handles foreign keys by default
 
         # 1. Daily Task Reports Table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS daily_task_reports (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 user_id INTEGER NOT NULL,
                 task_id INTEGER NOT NULL,
                 project_id INTEGER NOT NULL,
@@ -681,7 +722,7 @@ def init_daily_report_module():
                 time_spent REAL DEFAULT 0,
                 status TEXT DEFAULT 'In Progress',
                 blocker TEXT,
-                approval_status TEXT DEFAULT 'pending', -- pending, approved, rejected
+                approval_status TEXT DEFAULT 'pending',
                 reviewed_by INTEGER,
                 review_comment TEXT,
                 is_locked INTEGER DEFAULT 0,
@@ -697,7 +738,7 @@ def init_daily_report_module():
         # 2. Report Comments Table (Optional/Advanced)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS report_comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 report_id INTEGER NOT NULL,
                 commenter_id INTEGER NOT NULL,
                 comment TEXT NOT NULL,
@@ -711,7 +752,7 @@ def init_daily_report_module():
         # Audit logs for Super Admin actions on reports
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS audit_logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 actor_id INTEGER NOT NULL,
                 action TEXT NOT NULL,
                 target_type TEXT,
@@ -3734,8 +3775,8 @@ def create_milestone_employee():
         if not title or not project_id:
             return jsonify({'error': 'title and project_id are required'}), 400
 
-        conn = get_db_connection()
-        conn.execute("PRAGMA busy_timeout = 5000")
+        conn, db_type = get_db_connection()
+        # Note: PostgreSQL doesn't use PRAGMA busy_timeout (SQLite only)
         cur = conn.cursor()
 
         # Verify project exists
@@ -5751,12 +5792,20 @@ def get_employee_realtime_projects():
 
 def check_db_initialized():
     try:
-        conn = get_db_connection()
+        conn, db_type = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name='usertypes'
-        """)
+        
+        if db_type == "postgres":
+            cursor.execute("""
+                SELECT table_name FROM information_schema.tables 
+                WHERE table_name='usertypes'
+            """)
+        else:
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name='usertypes'
+            """)
+        
         exists = cursor.fetchone() is not None
         cursor.close()
         conn.close()
