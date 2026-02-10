@@ -532,9 +532,9 @@ def init_db():
                 cursor.execute("SELECT id FROM usertype_permissions WHERE usertype_id = %s AND module = %s AND action = %s", (ut_id, module, action))
                 exists = cursor.fetchone()
                 if exists:
-                    cursor.execute("UPDATE usertype_permissions SET granted = 1 WHERE id = %s", (exists['id'],))
+                    cursor.execute("UPDATE usertype_permissions SET granted = %s WHERE id = %s", (True, exists['id']))
                 else:
-                    cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, 1)", (ut_id, module, action))
+                    cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, %s)", (ut_id, module, action, True))
 
         # Get IDs for seeding permissions
         admin_id = ids.get('Administrator')
@@ -6851,8 +6851,8 @@ def get_usertypes():
         for ut in usertypes:
             # Safely get permissions
             try:
-                # IMPORTANT: Only fetch granted = 1 for "Assigned Permissions"
-                cursor.execute("SELECT module, action FROM usertype_permissions WHERE usertype_id = %s AND granted = 1", (ut['id'],))
+                # IMPORTANT: Only fetch granted = TRUE for "Assigned Permissions"
+                cursor.execute("SELECT module, action FROM usertype_permissions WHERE usertype_id = %s AND granted = %s", (ut['id'], True))
                 perms = cursor.fetchall()
                 perm_list = []
                 for p in perms:
@@ -6910,8 +6910,8 @@ def create_usertype():
                      module = 'SYSTEM'
                      action = perm
                 
-                cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, 1)",
-                               (usertype_id, module, action))
+                cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, %s)",
+                               (usertype_id, module, action, True))
             
             conn.commit()
             return jsonify({"success": True, "message": "User type created", "id": usertype_id}), 201
@@ -6957,8 +6957,8 @@ def update_usertype(ut_id):
                 else:
                      module = 'SYSTEM'
                      action = perm
-                cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, 1)",
-                               (ut_id, module, action))
+                cursor.execute("INSERT INTO usertype_permissions (usertype_id, module, action, granted) VALUES (%s, %s, %s, %s)",
+                               (ut_id, module, action, True))
             
             # Optional: Update existing users of this type%s
             # For now, let's NOT automatically update existing users' personal permissions to avoid overwriting custom overrides.
