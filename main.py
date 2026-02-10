@@ -180,42 +180,66 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 
 
 def get_db_connection():
-    url = urlparse(os.environ.get("DATABASE_URL"))
-    conn = psycopg2.connect(
-        host=url.hostname,
-        database=url.path[1:],
-        user=url.username,
-        password=url.password,
-        port=url.port
-    )
-    return conn
+    database_url = os.getenv("DATABASE_URL")
+
+    # If Railway / Postgres
+    if database_url and database_url.startswith("postgres"):
+        url = urlparse(database_url)
+        conn = psycopg2.connect(
+            host=url.hostname,
+            port=url.port,
+            user=url.username,
+            password=url.password,
+            dbname=url.path[1:]
+        )
+        return conn, "postgres"
+
+    # Else local SQLite
+    conn = sqlite3.connect("project_management.db")
+    conn.row_factory = sqlite3.Row
+    return conn, "sqlite"
 
 
 # REFACTORED init_db to be NON-DESTRUCTIVE and IDEMPOTENT
 def init_db():
     conn = None
     try:
-        conn = get_db_connection()
+        conn, db_type = get_db_connection()
         cursor = conn.cursor()
 
-        
-        cursor.execute("PRAGMA foreign_keys = ON")
-
-        # 1. Create independent tables first
-        
-        # Usertypes
-        cursor.execute('''
+        # 1️⃣ Create usertypes table correctly
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS usertypes (
-                SERIAL PRIMARY KEY,
-                user_role VARCHAR NOT NULL UNIQUE,
-                description VARCHAR,
+                id SERIAL PRIMARY KEY,
+                user_role VARCHAR(100) UNIQUE NOT NULL,
+                description TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        # Check if description column exists (for old DBS)
-        try: 
-            cursor.execute("ALTER TABLE usertypes ADD COLUMN description VARCHAR")
-        except: pass
+            );
+        """)
+
+        # 2️⃣ Safely add description column if old DB (Postgres way)
+        cursor.execute("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns
+                    WHERE table_name='usertypes' AND column_name='description'
+                ) THEN
+                    ALTER TABLE usertypes ADD COLUMN description TEXT;
+                END IF;
+            END$$;
+        """)
+
+        conn.commit()
+        print("✅ usertypes table initialized successfully")
+
+    except Exception as e:
+        print("[ERROR] Database initialization failed:", e)
+
+    finally:
+        if conn:
+            conn.close()
 
         # Usertype Permissions (dependent on usertypes)
         cursor.execute('''
