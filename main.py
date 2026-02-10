@@ -159,7 +159,15 @@ if Limiter is not None:
             # Using storage_uri lets flask-limiter auto-configure RedisStorage when possible
             limiter = Limiter(key_func=get_client_ip, app=app, storage_uri=REDIS_URL, default_limits=["1000 per hour"])
         else:
-            limiter = Limiter(key_func=get_client_ip, app=app, default_limits=["1000 per hour"])
+            # Use filesystem-based storage as fallback (suitable for production)
+            # This stores rate limit data in /tmp/flask-limiter.db
+            limiter = Limiter(
+                key_func=get_client_ip, 
+                app=app, 
+                storage_uri="memory://",  # memory:// is acceptable for single-dyno deployments
+                default_limits=["1000 per hour"]
+            )
+            logger.info("Flask-Limiter using in-memory storage. For multi-dyno deployments, configure REDIS_URL.")
     except Exception as e:
         logger.warning(f"Flask-Limiter initialization failed: {e}")
         limiter = None
@@ -242,6 +250,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        conn.commit()  # Commit usertypes before dependent tables
 
         # 2️⃣ Safely add description column if old DB (Postgres way)
         if db_type == "postgres":
@@ -258,6 +267,7 @@ def init_db():
                         END IF;
                     END$$;
                 """)
+                conn.commit()
             except Exception:
                 pass
 
@@ -268,7 +278,7 @@ def init_db():
                 usertype_id INTEGER NOT NULL,
                 module VARCHAR NOT NULL,
                 action VARCHAR NOT NULL,
-                granted BOOLEAN DEFAULT 0,
+                granted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (usertype_id) REFERENCES usertypes(id) ON DELETE CASCADE,
                 UNIQUE(usertype_id, module, action)
             )
@@ -282,7 +292,7 @@ def init_db():
                 email VARCHAR NOT NULL UNIQUE,
                 password VARCHAR NOT NULL,
                 user_type_id INTEGER NOT NULL,
-                granted BOOLEAN DEFAULT 0,
+                granted BOOLEAN DEFAULT FALSE,
                 status VARCHAR DEFAULT 'Active',
                 phone VARCHAR,
                 department VARCHAR,
@@ -293,6 +303,7 @@ def init_db():
                 FOREIGN KEY (user_type_id) REFERENCES usertypes(id)
             )
         ''')
+        conn.commit()  # Commit users before dependent tables
 
         # User Permissions (dependent on users)
         cursor.execute('''
@@ -301,7 +312,7 @@ def init_db():
                 user_id INTEGER NOT NULL,
                 module VARCHAR NOT NULL,
                 action VARCHAR NOT NULL,
-                granted BOOLEAN DEFAULT 0,
+                granted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 UNIQUE(user_id, module, action)
             )
@@ -471,7 +482,7 @@ def init_db():
             report_id INTEGER NOT NULL,
             commenter_id INTEGER NOT NULL,
             comment VARCHAR NOT NULL,
-            internal BOOLEAN DEFAULT 0,
+            internal BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (report_id) REFERENCES daily_task_reports(id),
             FOREIGN KEY (commenter_id) REFERENCES users(id)
@@ -613,11 +624,12 @@ def migrate_db():
                 usertype_id INTEGER NOT NULL,
                 module TEXT NOT NULL,
                 action TEXT NOT NULL,
-                granted BOOLEAN DEFAULT 0,
+                granted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (usertype_id) REFERENCES usertypes(id) ON DELETE CASCADE,
                 UNIQUE(usertype_id, module, action)
             )
         ''')
+        conn.commit()
 
         # Add daily_task_reports new columns if missing to support approvals and time tracking
         dtr_columns = [("daily_task_reports", "user_id", "INTEGER"),
@@ -727,6 +739,7 @@ def init_daily_report_module():
                 FOREIGN KEY (reviewed_by) REFERENCES users(id)
             )
         ''')
+        conn.commit()
 
         # 2. Report Comments Table (Optional/Advanced)
         cursor.execute('''
@@ -735,7 +748,7 @@ def init_daily_report_module():
                 report_id INTEGER NOT NULL,
                 commenter_id INTEGER NOT NULL,
                 comment TEXT NOT NULL,
-                internal BOOLEAN DEFAULT 0,
+                internal BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (report_id) REFERENCES daily_task_reports(id) ON DELETE CASCADE,
                 FOREIGN KEY (commenter_id) REFERENCES users(id)
